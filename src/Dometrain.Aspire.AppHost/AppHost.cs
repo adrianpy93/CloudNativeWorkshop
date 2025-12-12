@@ -1,21 +1,19 @@
-using Aspire.Hosting.Azure;
-using Azure.Provisioning.CosmosDB;
-using Microsoft.Extensions.Hosting;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
-var mainDbUsername = builder.AddParameter("postgres-username");
-var mainDbPassword = builder.AddParameter("postgres-password");
-
-var mainDb = builder.AddPostgres("main-db", mainDbUsername, mainDbPassword, port: 5433)
+var postgres = builder.AddPostgres("main-db", port: 5433);
     //.WithLifetime(ContainerLifetime.Persistent)
-    .AddDatabase("dometrain");
 
-var cartDb = builder.AddAzureCosmosDB("cosmosdb")
-    .AddDatabase("cartdb");
+// Add init script to create database
+postgres.WithBindMount("./postgres-init", "/docker-entrypoint-initdb.d");
+
+var mainDb = postgres.AddDatabase("dometrain");
+
+var cartDb = builder.AddAzureCosmosDB("carts")
+    .RunAsEmulator()
+    .AddCosmosDatabase("cartdb");
 
 var redis = builder.AddRedis("redis");
-    //.WithLifetime(ContainerLifetime.Persistent)
+//.WithLifetime(ContainerLifetime.Persistent)
 
 var rabbitmq = builder.AddRabbitMQ("rabbitmq")
     //.WithLifetime(ContainerLifetime.Persistent)
@@ -31,6 +29,3 @@ builder.AddProject("dometrain-api", "../Dometrain.Monolith.Api/Dometrain.Monolit
 var app = builder.Build();
 
 app.Run();
-
-
-
