@@ -8,15 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace Dometrain.Monolith.Api.Identity;
 
-public class ApiKeyAuthFilter : IAuthorizationFilter
+public class ApiKeyAuthFilter(IOptions<IdentitySettings> identitySettings) : IAuthorizationFilter
 {
-    private readonly IOptions<IdentitySettings> _identitySettings;
-
-    public ApiKeyAuthFilter(IOptions<IdentitySettings> identitySettings)
-    {
-        _identitySettings = identitySettings;
-    }
-
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         if (!context.HttpContext.Request.Headers.TryGetValue("x-api-key",
@@ -26,7 +19,7 @@ public class ApiKeyAuthFilter : IAuthorizationFilter
             return;
         }
 
-        if (_identitySettings.Value.AdminApiKey != extractedApiKey)
+        if (identitySettings.Value.AdminApiKey != extractedApiKey)
             context.Result = new UnauthorizedObjectResult("Invalid API Key");
     }
 }

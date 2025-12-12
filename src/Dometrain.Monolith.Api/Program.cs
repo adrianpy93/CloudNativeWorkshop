@@ -1,6 +1,7 @@
 #region
 
 using System.Text;
+using Dometrain.Aspire.ServiceDefaults;
 using Dometrain.Monolith.Api.Courses;
 using Dometrain.Monolith.Api.Database;
 using Dometrain.Monolith.Api.Enrollments;

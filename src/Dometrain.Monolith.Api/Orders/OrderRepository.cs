@@ -18,18 +18,11 @@ public interface IOrderRepository
     Task<Order?> PlaceAsync(Guid studentId, IEnumerable<Guid> courseIds);
 }
 
-public class OrderRepository : IOrderRepository
+public class OrderRepository(IDbConnectionFactory dbConnectionFactory) : IOrderRepository
 {
-    private readonly IDbConnectionFactory _dbConnectionFactory;
-
-    public OrderRepository(IDbConnectionFactory dbConnectionFactory)
-    {
-        _dbConnectionFactory = dbConnectionFactory;
-    }
-
     public async Task<Order?> GetByIdAsync(Guid orderId)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         var order = await connection.QuerySingleOrDefaultAsync<Order>(
             "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where id = @orderId",
             new { orderId });
@@ -46,7 +39,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<IEnumerable<Order>> GetAllForStudentAsync(Guid studentId)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         var orders = (await connection.QueryAsync<Order>(
             "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where student_id = @studentId",
             new { studentId })).ToArray();
@@ -66,7 +59,7 @@ public class OrderRepository : IOrderRepository
 
     public async Task<Order?> PlaceAsync(Guid studentId, IEnumerable<Guid> courseIds)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         var transaction = connection.BeginTransaction();
 
         var order = new Order

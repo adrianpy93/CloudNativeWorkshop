@@ -24,21 +24,15 @@ public interface IShoppingCartRepository
     Task<bool> ClearAsync(Guid studentId);
 }
 
-public class ShoppingCartRepository : IShoppingCartRepository
+public class ShoppingCartRepository(CosmosClient cosmosClient) : IShoppingCartRepository
 {
     private const string DatabaseId = "cartdb";
     private const string ContainerId = "carts";
-    private readonly CosmosClient _cosmosClient;
 
-
-    public ShoppingCartRepository(CosmosClient cosmosClient)
-    {
-        _cosmosClient = cosmosClient;
-    }
 
     public async Task<bool> AddCourseAsync(Guid studentId, Guid courseId)
     {
-        var container = _cosmosClient.GetContainer(DatabaseId, ContainerId);
+        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
         ShoppingCart cart;
         try
         {
@@ -62,7 +56,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
     public async Task<ShoppingCart?> GetByIdAsync(Guid studentId)
     {
-        var container = _cosmosClient.GetContainer(DatabaseId, ContainerId);
+        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
         try
         {
             return await container.ReadItemAsync<ShoppingCart>(studentId.ToString(),
@@ -76,7 +70,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
     public async Task<bool> RemoveItemAsync(Guid studentId, Guid courseId)
     {
-        var container = _cosmosClient.GetContainer(DatabaseId, ContainerId);
+        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
         try
         {
             var cart = await GetByIdAsync(studentId);
@@ -94,7 +88,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
 
     public async Task<bool> ClearAsync(Guid studentId)
     {
-        var container = _cosmosClient.GetContainer(DatabaseId, ContainerId);
+        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
         try
         {
             await container.DeleteItemAsync<ShoppingCart>(studentId.ToString(), new PartitionKey(studentId.ToString()));

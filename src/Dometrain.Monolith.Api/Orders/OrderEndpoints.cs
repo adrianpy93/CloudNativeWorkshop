@@ -16,9 +16,9 @@ public static class OrderEndpoints
         var studentId = httpContext.GetUserId()!;
         var createdOrder = await orderService.PlaceAsync(studentId.Value, request.CourseIds);
 
-        if (createdOrder is null) return Results.NotFound();
-
-        return TypedResults.CreatedAtRoute(createdOrder, GetOrderEndpointName, new { orderId = createdOrder.Id });
+        return createdOrder is null 
+            ? Results.NotFound() 
+            : TypedResults.CreatedAtRoute(createdOrder, GetOrderEndpointName, new { orderId = createdOrder.Id });
     }
 
     public static async Task<IResult> Get(Guid orderId, IOrderService orderService, HttpContext httpContext)
@@ -26,9 +26,8 @@ public static class OrderEndpoints
         var studentId = httpContext.GetUserId()!;
         var order = await orderService.GetByIdAsync(orderId);
 
-        if (order is null) return Results.NotFound();
-
-        if (order.StudentId != studentId && !httpContext.IsAdmin()) return Results.NotFound();
+        if (order is null || order.StudentId != studentId && !httpContext.IsAdmin()) 
+            return Results.NotFound();
 
         return Results.Ok(order);
     }

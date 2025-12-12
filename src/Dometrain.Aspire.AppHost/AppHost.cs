@@ -28,4 +28,4 @@ builder.AddProject("dometrain-api", "../Dometrain.Monolith.Api/Dometrain.Monolit
 
 var app = builder.Build();
 
-app.Run();
+await app.RunAsync();

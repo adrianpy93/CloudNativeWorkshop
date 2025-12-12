@@ -7,23 +7,17 @@ using StackExchange.Redis;
 
 namespace Dometrain.Monolith.Api.Courses;
 
-public class CachedCourseRepository : ICourseRepository
+public class CachedCourseRepository(
+    ICourseRepository courseRepository,
+    IConnectionMultiplexer multiplexer
+) : ICourseRepository
 {
-    private readonly ICourseRepository _courseRepository;
-    private readonly IConnectionMultiplexer _multiplexer;
-
-    public CachedCourseRepository(ICourseRepository courseRepository, IConnectionMultiplexer multiplexer)
-    {
-        _courseRepository = courseRepository;
-        _multiplexer = multiplexer;
-    }
-
     public async Task<Course?> CreateAsync(Course course)
     {
-        var created = await _courseRepository.CreateAsync(course);
+        var created = await courseRepository.CreateAsync(course);
         if (created is null) return null;
 
-        var db = _multiplexer.GetDatabase();
+        var db = multiplexer.GetDatabase();
         var serializedCourse = JsonSerializer.Serialize(course);
         var batch = new KeyValuePair<RedisKey, RedisValue>[]
         {
@@ -37,11 +31,11 @@ public class CachedCourseRepository : ICourseRepository
 
     public async Task<Course?> GetByIdAsync(Guid id)
     {
-        var db = _multiplexer.GetDatabase();
+        var db = multiplexer.GetDatabase();
         var cachedCourse = await db.StringGetAsync($"course:id:{id}");
         if (!cachedCourse.IsNull) return JsonSerializer.Deserialize<Course>(cachedCourse.ToString());
 
-        var course = await _courseRepository.GetByIdAsync(id);
+        var course = await courseRepository.GetByIdAsync(id);
         if (course is null) return course;
 
         var serializedCourse = JsonSerializer.Serialize(course);
@@ -57,12 +51,12 @@ public class CachedCourseRepository : ICourseRepository
 
     public async Task<Course?> GetBySlugAsync(string slug)
     {
-        var db = _multiplexer.GetDatabase();
+        var db = multiplexer.GetDatabase();
         var cachedCourseKey = await db.StringGetAsync($"course:slug:{slug}");
 
         if (!cachedCourseKey.IsNull) return await GetByIdAsync(Guid.Parse(cachedCourseKey.ToString()));
 
-        var course = await _courseRepository.GetBySlugAsync(slug);
+        var course = await courseRepository.GetBySlugAsync(slug);
         if (course is null) return course;
 
         var serializedCourse = JsonSerializer.Serialize(course);
@@ -77,15 +71,15 @@ public class CachedCourseRepository : ICourseRepository
 
     public Task<IEnumerable<Course>> GetAllAsync(string nameFilter, int pageNumber, int pageSize)
     {
-        return _courseRepository.GetAllAsync(nameFilter, pageNumber, pageSize);
+        return courseRepository.GetAllAsync(nameFilter, pageNumber, pageSize);
     }
 
     public async Task<Course?> UpdateAsync(Course course)
     {
-        var updated = await _courseRepository.UpdateAsync(course);
+        var updated = await courseRepository.UpdateAsync(course);
         if (updated is null) return updated;
 
-        var db = _multiplexer.GetDatabase();
+        var db = multiplexer.GetDatabase();
         var serializedCourse = JsonSerializer.Serialize(course);
         var batch = new KeyValuePair<RedisKey, RedisValue>[]
         {
@@ -98,11 +92,11 @@ public class CachedCourseRepository : ICourseRepository
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var deleted = await _courseRepository.DeleteAsync(id);
+        var deleted = await courseRepository.DeleteAsync(id);
 
         if (!deleted) return deleted;
 
-        var db = _multiplexer.GetDatabase();
+        var db = multiplexer.GetDatabase();
         var cachedCourseString = await db.StringGetAsync($"course:id:{id}");
         if (cachedCourseString.IsNull) return deleted;
 

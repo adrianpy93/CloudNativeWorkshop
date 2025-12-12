@@ -15,19 +15,12 @@ public interface IIdentityService
     string GenerateToken(Guid userId, string email);
 }
 
-public class IdentityService : IIdentityService
+public class IdentityService(IOptions<IdentitySettings> identitySettings) : IIdentityService
 {
-    private readonly IOptions<IdentitySettings> _identitySettings;
-
-    public IdentityService(IOptions<IdentitySettings> identitySettings)
-    {
-        _identitySettings = identitySettings;
-    }
-
     public string GenerateToken(Guid userId, string email)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_identitySettings.Value.Key);
+        var key = Encoding.UTF8.GetBytes(identitySettings.Value.Key);
 
         var claims = new List<Claim>
         {
@@ -47,9 +40,9 @@ public class IdentityService : IIdentityService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.Add(_identitySettings.Value.Lifetime),
-            Issuer = _identitySettings.Value.Issuer,
-            Audience = _identitySettings.Value.Audience,
+            Expires = DateTime.UtcNow.Add(identitySettings.Value.Lifetime),
+            Issuer = identitySettings.Value.Issuer,
+            Audience = identitySettings.Value.Audience,
             SigningCredentials =
                 new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };

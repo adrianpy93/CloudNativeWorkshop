@@ -7,15 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Dometrain.Monolith.Api.Identity;
 
-public class AdminAuthRequirement : IAuthorizationHandler, IAuthorizationRequirement
+public class AdminAuthRequirement(string apiKey) : IAuthorizationHandler, IAuthorizationRequirement
 {
     public const string ApiUserId = "005d25b1-bfc8-4391-b349-6cec00d1416c";
-    private readonly string _apiKey;
-
-    public AdminAuthRequirement(string apiKey)
-    {
-        _apiKey = apiKey;
-    }
 
     public Task HandleAsync(AuthorizationHandlerContext context)
     {
@@ -29,13 +23,7 @@ public class AdminAuthRequirement : IAuthorizationHandler, IAuthorizationRequire
         if (httpContext is null) return Task.CompletedTask;
 
         if (!httpContext.Request.Headers.TryGetValue("x-api-key", out
-                var extractedApiKey))
-        {
-            context.Fail();
-            return Task.CompletedTask;
-        }
-
-        if (_apiKey != extractedApiKey)
+                var extractedApiKey) || apiKey != extractedApiKey)
         {
             context.Fail();
             return Task.CompletedTask;

@@ -18,55 +18,47 @@ public interface IShoppingCartService
     Task<ShoppingCart?> ClearAsync(Guid studentId);
 }
 
-public class ShoppingCartService : IShoppingCartService
+public class ShoppingCartService(
+    IShoppingCartRepository shoppingCartRepository,
+    IStudentRepository studentRepository,
+    ICourseRepository courseRepository
+) : IShoppingCartService
 {
-    private readonly ICourseRepository _courseRepository;
-    private readonly IShoppingCartRepository _shoppingCartRepository;
-    private readonly IStudentRepository _studentRepository;
-
-    public ShoppingCartService(IShoppingCartRepository shoppingCartRepository, IStudentRepository studentRepository,
-        ICourseRepository courseRepository)
-    {
-        _shoppingCartRepository = shoppingCartRepository;
-        _studentRepository = studentRepository;
-        _courseRepository = courseRepository;
-    }
-
     public async Task<ShoppingCart?> AddCourseAsync(Guid studentId, Guid courseId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
         if (student is null) return null;
 
-        var course = await _courseRepository.GetByIdAsync(courseId);
+        var course = await courseRepository.GetByIdAsync(courseId);
         if (course is null) return null;
 
-        await _shoppingCartRepository.AddCourseAsync(studentId, courseId);
+        await shoppingCartRepository.AddCourseAsync(studentId, courseId);
         return await GetByIdAsync(studentId);
     }
 
     public async Task<ShoppingCart?> GetByIdAsync(Guid studentId)
     {
-        return await _shoppingCartRepository.GetByIdAsync(studentId);
+        return await shoppingCartRepository.GetByIdAsync(studentId);
     }
 
     public async Task<ShoppingCart?> RemoveItemAsync(Guid studentId, Guid courseId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
         if (student is null) return null;
 
-        var course = await _courseRepository.GetByIdAsync(courseId);
+        var course = await courseRepository.GetByIdAsync(courseId);
         if (course is null) return null;
 
-        await _shoppingCartRepository.RemoveItemAsync(studentId, courseId);
+        await shoppingCartRepository.RemoveItemAsync(studentId, courseId);
         return await GetByIdAsync(studentId);
     }
 
     public async Task<ShoppingCart?> ClearAsync(Guid studentId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
         if (student is null) return null;
 
-        await _shoppingCartRepository.ClearAsync(studentId);
+        await shoppingCartRepository.ClearAsync(studentId);
         return new ShoppingCart
         {
             StudentId = studentId

@@ -16,27 +16,19 @@ public interface IEnrollmentService
     Task<bool?> UnEnrollFromCourseAsync(Guid studentId, Guid courseId);
 }
 
-public class EnrollmentService : IEnrollmentService
+public class EnrollmentService(
+    IEnrollmentRepository enrollmentRepository,
+    IStudentRepository studentRepository,
+    ICourseRepository courseRepository)
+    : IEnrollmentService
 {
-    private readonly ICourseRepository _courseRepository;
-    private readonly IEnrollmentRepository _enrollmentRepository;
-    private readonly IStudentRepository _studentRepository;
-
-    public EnrollmentService(IEnrollmentRepository enrollmentRepository, IStudentRepository studentRepository,
-        ICourseRepository courseRepository)
-    {
-        _enrollmentRepository = enrollmentRepository;
-        _studentRepository = studentRepository;
-        _courseRepository = courseRepository;
-    }
-
     public async Task<Enrollments?> GetStudentEnrollmentsAsync(Guid studentId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
 
         if (student is null) return null;
 
-        var courseIds = await _enrollmentRepository.GetEnrolledCoursesAsync(studentId);
+        var courseIds = await enrollmentRepository.GetEnrolledCoursesAsync(studentId);
         return new Enrollments
         {
             StudentId = studentId, CourseIds = courseIds.ToList()
@@ -45,27 +37,27 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<bool?> EnrollToCourseAsync(Guid studentId, Guid courseId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
 
         if (student is null) return null;
 
-        var course = await _courseRepository.GetByIdAsync(courseId);
+        var course = await courseRepository.GetByIdAsync(courseId);
 
         if (course is null) return null;
 
-        return await _enrollmentRepository.EnrollToCourseAsync(studentId, courseId);
+        return await enrollmentRepository.EnrollToCourseAsync(studentId, courseId);
     }
 
     public async Task<bool?> UnEnrollFromCourseAsync(Guid studentId, Guid courseId)
     {
-        var student = await _studentRepository.GetByIdAsync(studentId);
+        var student = await studentRepository.GetByIdAsync(studentId);
 
         if (student is null) return null;
 
-        var course = await _courseRepository.GetByIdAsync(courseId);
+        var course = await courseRepository.GetByIdAsync(courseId);
 
         if (course is null) return null;
 
-        return await _enrollmentRepository.UnEnrollFromCourseAsync(studentId, courseId);
+        return await enrollmentRepository.UnEnrollFromCourseAsync(studentId, courseId);
     }
 }

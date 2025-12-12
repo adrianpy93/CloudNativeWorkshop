@@ -8,22 +8,15 @@ using Microsoft.AspNetCore.Diagnostics;
 
 namespace Dometrain.Monolith.Api.ErrorHandling;
 
-public class ProblemExceptionHandler : IExceptionHandler
+public class ProblemExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {
-    private readonly IProblemDetailsService _problemDetailsService;
-
-    public ProblemExceptionHandler(IProblemDetailsService problemDetailsService)
-    {
-        _problemDetailsService = problemDetailsService;
-    }
-
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
         CancellationToken cancellationToken)
     {
         if (exception is not ValidationException validationException) return false;
 
         httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-        return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+        return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             ProblemDetails =

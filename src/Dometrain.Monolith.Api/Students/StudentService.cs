@@ -22,35 +22,27 @@ public interface IStudentService
     Task<bool> DeleteAsync(Guid id);
 }
 
-public class StudentService : IStudentService
+public class StudentService(
+    IPasswordHasher<Student> passwordHasher,
+    IStudentRepository studentRepository,
+    IValidator<Student> validator
+) : IStudentService
 {
-    private readonly IPasswordHasher<Student> _passwordHasher;
-    private readonly IStudentRepository _studentRepository;
-    private readonly IValidator<Student> _validator;
-
-    public StudentService(IPasswordHasher<Student> passwordHasher, IStudentRepository studentRepository,
-        IValidator<Student> validator)
-    {
-        _passwordHasher = passwordHasher;
-        _studentRepository = studentRepository;
-        _validator = validator;
-    }
-
     public async Task<bool> CheckCredentialsAsync(string email, string password)
     {
-        var storedHash = await _studentRepository.GetPasswordHashAsync(email);
+        var storedHash = await studentRepository.GetPasswordHashAsync(email);
 
         if (storedHash is null) return false;
 
-        var valid = _passwordHasher.VerifyHashedPassword(null!, storedHash, password);
+        var valid = passwordHasher.VerifyHashedPassword(null!, storedHash, password);
         return valid == PasswordVerificationResult.Success;
     }
 
     public async Task<Student?> CreateAsync(Student student, string password)
     {
-        await _validator.ValidateAndThrowAsync(student);
-        var hash = _passwordHasher.HashPassword(null!, password);
-        return await _studentRepository.CreateAsync(student, hash);
+        await validator.ValidateAndThrowAsync(student);
+        var hash = passwordHasher.HashPassword(null!, password);
+        return await studentRepository.CreateAsync(student, hash);
     }
 
     public async Task<IEnumerable<Student?>> GetAllAsync(int pageNumber, int pageSize)
@@ -59,21 +51,21 @@ public class StudentService : IStudentService
         if (pageSize < 1) pageSize = 1;
         if (pageSize > 50) pageSize = 50;
 
-        return await _studentRepository.GetAllAsync(pageNumber, pageSize);
+        return await studentRepository.GetAllAsync(pageNumber, pageSize);
     }
 
     public async Task<Student?> GetByEmailAsync(string email)
     {
-        return await _studentRepository.GetByEmailAsync(email);
+        return await studentRepository.GetByEmailAsync(email);
     }
 
     public async Task<Student?> GetByIdAsync(Guid id)
     {
-        return await _studentRepository.GetByIdAsync(id);
+        return await studentRepository.GetByIdAsync(id);
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        return await _studentRepository.DeleteByIdAsync(id);
+        return await studentRepository.DeleteByIdAsync(id);
     }
 }

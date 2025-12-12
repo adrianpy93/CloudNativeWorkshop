@@ -16,18 +16,11 @@ public interface IEnrollmentRepository
     Task<bool> UnEnrollFromCourseAsync(Guid studentId, Guid courseId);
 }
 
-public class EnrollmentRepository : IEnrollmentRepository
+public class EnrollmentRepository(IDbConnectionFactory dbConnectionFactory) : IEnrollmentRepository
 {
-    private readonly IDbConnectionFactory _dbConnectionFactory;
-
-    public EnrollmentRepository(IDbConnectionFactory dbConnectionFactory)
-    {
-        _dbConnectionFactory = dbConnectionFactory;
-    }
-
     public async Task<IEnumerable<Guid>> GetEnrolledCoursesAsync(Guid studentId)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         return await connection.QueryAsync<Guid>(
             "select course_id from enrollments where student_id = @studentId",
             new { studentId });
@@ -35,7 +28,7 @@ public class EnrollmentRepository : IEnrollmentRepository
 
     public async Task<bool> EnrollToCourseAsync(Guid studentId, Guid courseId)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         var result = await connection.ExecuteAsync(
             """
             insert into enrollments (student_id, course_id)
@@ -47,7 +40,7 @@ public class EnrollmentRepository : IEnrollmentRepository
 
     public async Task<bool> UnEnrollFromCourseAsync(Guid studentId, Guid courseId)
     {
-        using var connection = await _dbConnectionFactory.CreateConnectionAsync();
+        using var connection = await dbConnectionFactory.CreateConnectionAsync();
         var result = await connection.ExecuteAsync(
             """
             delete from enrollments
