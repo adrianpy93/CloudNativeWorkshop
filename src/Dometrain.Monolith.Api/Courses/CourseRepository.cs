@@ -1,20 +1,24 @@
+#region
+
 using Dapper;
 using Dometrain.Monolith.Api.Database;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Courses;
 
 public interface ICourseRepository
 {
     Task<Course?> CreateAsync(Course course);
-    
+
     Task<Course?> GetByIdAsync(Guid id);
-    
+
     Task<Course?> GetBySlugAsync(string slug);
-    
+
     Task<IEnumerable<Course>> GetAllAsync(string nameFilter, int pageNumber, int pageSize);
-    
+
     Task<Course?> UpdateAsync(Course course);
-    
+
     Task<bool> DeleteAsync(Guid id);
 }
 
@@ -35,7 +39,7 @@ public class CourseRepository : ICourseRepository
             insert into courses (id, name, description, slug, author)
             values (@id, @name, @description, @slug, @author)
             """, course);
-        
+
         return result > 0 ? course : null;
     }
 
@@ -61,7 +65,7 @@ public class CourseRepository : ICourseRepository
             select * from courses
                      where (@nameFilter is null or name ilike ('%' || @nameFilter || '%'))
                      limit @pageSize offset @pageOffset
-            """, 
+            """,
             new { nameFilter, pageSize, pageOffset = (pageNumber - 1) * pageSize });
     }
 

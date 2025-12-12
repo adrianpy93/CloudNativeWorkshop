@@ -1,19 +1,23 @@
+#region
+
 using FluentValidation;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Courses;
 
 public interface ICourseService
 {
     Task<Course?> CreateAsync(Course course);
-    
+
     Task<Course?> GetByIdAsync(Guid id);
-    
+
     Task<Course?> GetBySlugAsync(string slug);
-    
+
     Task<IEnumerable<Course>> GetAllAsync(string nameFilter, int pageNumber, int pageSize);
-    
+
     Task<Course?> UpdateAsync(Course course);
-    
+
     Task<bool> DeleteAsync(Guid id);
 }
 
@@ -57,11 +61,8 @@ public class CourseService : ICourseService
     {
         await _validator.ValidateAndThrowAsync(course);
         var existingCourse = await GetByIdAsync(course.Id);
-        if (existingCourse is null)
-        {
-            return null;
-        }
-        
+        if (existingCourse is null) return null;
+
         return await _courseRepository.UpdateAsync(course);
     }
 

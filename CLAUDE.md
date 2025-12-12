@@ -4,17 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a .NET 9 cloud-native workshop project using .NET Aspire for orchestration and cloud-native development patterns. The solution consists of:
+This is a .NET 10 cloud-native workshop project using .NET Aspire 13 for orchestration and cloud-native development patterns. The solution consists of:
 
 - **Dometrain.Monolith.Api**: Main API project containing domain modules (Courses, Students, Orders, ShoppingCarts, Enrollments, Identity)
 - **Dometrain.Aspire.AppHost**: .NET Aspire orchestration host that manages application services and dependencies
 - **Dometrain.Aspire.ServiceDefaults**: Shared service configuration including telemetry, resilience, and service discovery
 
 ### Infrastructure Components
+All infrastructure is orchestrated by Aspire AppHost and runs automatically when starting the AppHost:
 - **PostgreSQL**: Primary database (port 5433) for transactional data
-- **Azure Cosmos DB**: Document store for shopping carts (runs as emulator in development with Data Explorer)
+- **Azure Cosmos DB**: Document store for shopping carts (Aspire runs emulator automatically in development with Data Explorer UI)
 - **Redis**: Distributed cache for Courses and ShoppingCarts (includes RedisInsight management UI)
-- **RabbitMQ**: Message broker (includes management plugin)
+- **RabbitMQ**: Message broker (includes management plugin UI)
 
 ### Domain Structure
 The main API follows a modular monolith pattern with these domains:
@@ -40,15 +41,15 @@ dotnet run --project src/Dometrain.Monolith.Api
 ```
 
 ### Database
-```bash
-# Start PostgreSQL via Docker Compose
-docker compose up db
+Database initialization happens automatically on startup via `DbInitializer.InitializeAsync()`.
 
-# Database initialization happens automatically on startup via DbInitializer
+Alternatively, start PostgreSQL standalone via Docker Compose:
+```bash
+docker compose up db
 ```
 
 ### Testing
-Use the provided Insomnia collection (`insomnia-latest.yaml`) or the JSON version (`Insomnia_collection.json`) for API testing.
+Use the provided Insomnia collection (`insomnia-latest.yaml`) for API testing.
 
 ## Configuration
 
@@ -83,6 +84,16 @@ FluentValidation is configured for request validation across all endpoints.
 - Repository pattern for data access layers
 - Singleton lifetime for repositories and services
 - Decorator pattern for caching: `CachedCourseRepository` and `CachedShoppingCartRepository` wrap base repositories and add Redis caching layer
+  - Base repositories registered first, then wrapped in cached decorators via factory functions in DI
+  - Example: `CourseRepository` → `CachedCourseRepository` implements `ICourseRepository`
+
+### Endpoint Architecture
+- Minimal API endpoints organized by domain using static classes
+- Each domain has two files:
+  - `*Endpoints.cs`: Contains static endpoint handler methods
+  - `*EndpointExtensions.cs`: Contains `Map*Endpoints()` extension method for route registration
+- Dependencies injected as handler method parameters
+- Validation via FluentValidation validators (registered as singletons)
 
 ### Observability
 - OpenTelemetry configured via ServiceDefaults (metrics, traces, logs)

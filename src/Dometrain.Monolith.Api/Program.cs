@@ -1,3 +1,5 @@
+#region
+
 using System.Text;
 using Dometrain.Monolith.Api.Courses;
 using Dometrain.Monolith.Api.Database;
@@ -16,12 +18,14 @@ using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
+#endregion
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
 var config = builder.Configuration;
-    
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(x => x.OperationFilter<SwaggerDefaultValues>());
@@ -48,8 +52,8 @@ builder.Services.AddAuthentication(x =>
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ApiAdmin", p => p.AddRequirements(new AdminAuthRequirement(config["Identity:AdminApiKey"]!)))
-    .AddPolicy("Admin", p => p.RequireAssertion(c => 
-            c.User.HasClaim(m => m is { Type: "is_admin", Value: "true" })));
+    .AddPolicy("Admin", p => p.RequireAssertion(c =>
+        c.User.HasClaim(m => m is { Type: "is_admin", Value: "true" })));
 
 builder.Services.AddScoped<ApiKeyAuthFilter>();
 
@@ -75,11 +79,14 @@ builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
 builder.Services.AddSingleton<ICourseService, CourseService>();
 
 builder.Services.AddSingleton<CourseRepository>();
-builder.Services.AddSingleton<ICourseRepository>(s => 
-    new CachedCourseRepository(s.GetRequiredService<CourseRepository>(), s.GetRequiredService<IConnectionMultiplexer>()));
+builder.Services.AddSingleton<ICourseRepository>(s =>
+    new CachedCourseRepository(s.GetRequiredService<CourseRepository>(),
+        s.GetRequiredService<IConnectionMultiplexer>()));
 
 builder.Services.AddSingleton<ShoppingCartRepository>();
-builder.Services.AddSingleton<IShoppingCartRepository>(s => new CachedShoppingCartRepository(s.GetRequiredService<ShoppingCartRepository>(), s.GetRequiredService<IConnectionMultiplexer>()));
+builder.Services.AddSingleton<IShoppingCartRepository>(s =>
+    new CachedShoppingCartRepository(s.GetRequiredService<ShoppingCartRepository>(),
+        s.GetRequiredService<IConnectionMultiplexer>()));
 builder.Services.AddSingleton<IShoppingCartService, ShoppingCartService>();
 
 builder.Services.AddSingleton<IEnrollmentRepository, EnrollmentRepository>();

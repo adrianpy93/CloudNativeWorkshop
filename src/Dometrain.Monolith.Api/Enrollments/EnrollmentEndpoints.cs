@@ -1,4 +1,8 @@
+#region
+
 using Dometrain.Monolith.Api.Identity;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Enrollments;
 
@@ -10,15 +14,17 @@ public static class EnrollmentEndpoints
         var enrollment = await enrollmentService.GetStudentEnrollmentsAsync(studentId.Value);
         return enrollment is null ? Results.NotFound() : Results.Ok(enrollment);
     }
-    
-    public static async Task<IResult> Enroll(Guid courseId, IEnrollmentService enrollmentService, HttpContext httpContext)
+
+    public static async Task<IResult> Enroll(Guid courseId, IEnrollmentService enrollmentService,
+        HttpContext httpContext)
     {
         var studentId = httpContext.GetUserId()!;
         var enrolled = await enrollmentService.EnrollToCourseAsync(studentId.Value, courseId);
         return enrolled is null ? Results.NotFound() : Results.Ok();
     }
-    
-    public static async Task<IResult> UnEnroll(Guid courseId, IEnrollmentService enrollmentService, HttpContext httpContext)
+
+    public static async Task<IResult> UnEnroll(Guid courseId, IEnrollmentService enrollmentService,
+        HttpContext httpContext)
     {
         var studentId = httpContext.GetUserId()!;
         var enrolled = await enrollmentService.UnEnrollFromCourseAsync(studentId.Value, courseId);

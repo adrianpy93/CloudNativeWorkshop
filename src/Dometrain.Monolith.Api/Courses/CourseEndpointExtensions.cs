@@ -9,16 +9,16 @@ public static class CourseEndpointExtensions
 
         app.MapGet("/courses/{idOrSlug}", CourseEndpoints.Get)
             .AllowAnonymous();
-        
+
         app.MapGet("/courses", CourseEndpoints.GetAll)
             .AllowAnonymous();
-        
+
         app.MapPut("/courses/{id:guid}", CourseEndpoints.Update)
             .RequireAuthorization("ApiAdmin", "Admin");
-        
+
         app.MapDelete("/courses/{id:guid}", CourseEndpoints.Delete)
             .RequireAuthorization("ApiAdmin", "Admin");
-        
+
         return app;
     }
 }

@@ -6,13 +6,13 @@ public static class EnrollmentEndpointExtensions
     {
         app.MapGet("/enrollments", EnrollmentEndpoints.Get)
             .RequireAuthorization();
-        
+
         app.MapPut("/enrollments/{courseId:guid}", EnrollmentEndpoints.Enroll)
             .RequireAuthorization("ApiAdmin", "Admin");
-        
+
         app.MapDelete("/enrollments/{courseId:guid}", EnrollmentEndpoints.UnEnroll)
             .RequireAuthorization("ApiAdmin", "Admin");
-        
+
         return app;
     }
 }

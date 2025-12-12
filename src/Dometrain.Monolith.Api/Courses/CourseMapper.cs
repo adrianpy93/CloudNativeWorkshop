@@ -12,7 +12,7 @@ public static class CourseMapper
             Author = request.Author
         };
     }
-    
+
     public static Course MapToCourse(this UpdateCourseRequest request, Guid id)
     {
         return new Course

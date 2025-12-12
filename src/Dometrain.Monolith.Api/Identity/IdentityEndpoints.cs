@@ -1,13 +1,17 @@
+#region
+
 using Dometrain.Monolith.Api.Students;
 using FluentValidation;
 using Microsoft.Extensions.Options;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Identity;
 
 public static class IdentityEndpoints
 {
     public static async Task<IResult> Login(
-        StudentLoginRequest request, 
+        StudentLoginRequest request,
         IStudentService studentService,
         IIdentityService identityService,
         IOptions<IdentitySettings> identitySettings)
@@ -15,15 +19,12 @@ public static class IdentityEndpoints
         var isValid = await studentService.CheckCredentialsAsync(
             request.Email, request.Password);
 
-        if (!isValid)
-        {
-            throw new ValidationException("Invalid login request");
-        }
+        if (!isValid) throw new ValidationException("Invalid login request");
 
         var user = await studentService.GetByEmailAsync(request.Email);
-        
+
         var jwt = identityService.GenerateToken(user!.Id, request.Email);
-        
+
         return Results.Ok(new
         {
             token_type = "Bearer",

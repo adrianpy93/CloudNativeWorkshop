@@ -1,11 +1,15 @@
+#region
+
 using FluentValidation;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Courses;
 
 public class CourseValidator : AbstractValidator<Course>
 {
     private readonly ICourseRepository _courseRepository;
-    
+
     public CourseValidator(ICourseRepository courseRepository)
     {
         _courseRepository = courseRepository;
@@ -16,15 +20,12 @@ public class CourseValidator : AbstractValidator<Course>
         RuleFor(x => x.Slug).MustAsync(ValidateSlug)
             .WithMessage("A course with this name already exists");
     }
-    
+
     private async Task<bool> ValidateSlug(Course course, string slug, CancellationToken token = default)
     {
         var existingCourse = await _courseRepository.GetBySlugAsync(slug);
 
-        if (existingCourse is not null)
-        {
-            return existingCourse.Id == course.Id;
-        }
+        if (existingCourse is not null) return existingCourse.Id == course.Id;
 
         return existingCourse is null;
     }

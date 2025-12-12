@@ -1,5 +1,9 @@
+#region
+
 using System.Net;
 using Microsoft.Azure.Cosmos;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.ShoppingCarts;
 
@@ -14,18 +18,17 @@ public interface IShoppingCartRepository
     Task<bool> AddCourseAsync(Guid studentId, Guid courseId);
 
     Task<ShoppingCart?> GetByIdAsync(Guid studentId);
-    
+
     Task<bool> RemoveItemAsync(Guid studentId, Guid courseId);
-    
+
     Task<bool> ClearAsync(Guid studentId);
-    
 }
 
 public class ShoppingCartRepository : IShoppingCartRepository
 {
-    private readonly CosmosClient _cosmosClient;
     private const string DatabaseId = "cartdb";
     private const string ContainerId = "carts";
+    private readonly CosmosClient _cosmosClient;
 
 
     public ShoppingCartRepository(CosmosClient cosmosClient)
@@ -51,10 +54,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
             };
         }
 
-        if (!cart.CourseIds.Contains(courseId))
-        {
-            cart.CourseIds.Add(courseId);
-        }
+        if (!cart.CourseIds.Contains(courseId)) cart.CourseIds.Add(courseId);
 
         var response = await container.UpsertItemAsync(cart);
         return response.StatusCode is HttpStatusCode.OK or HttpStatusCode.Created;
@@ -80,10 +80,7 @@ public class ShoppingCartRepository : IShoppingCartRepository
         try
         {
             var cart = await GetByIdAsync(studentId);
-            if (cart is null)
-            {
-                return true;
-            }
+            if (cart is null) return true;
 
             cart.CourseIds.Remove(courseId);
             var response = await container.UpsertItemAsync(cart);

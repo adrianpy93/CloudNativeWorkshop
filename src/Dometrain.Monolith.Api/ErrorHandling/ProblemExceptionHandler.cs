@@ -1,6 +1,10 @@
+#region
+
 using System.Net;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.ErrorHandling;
 
@@ -13,13 +17,11 @@ public class ProblemExceptionHandler : IExceptionHandler
         _problemDetailsService = problemDetailsService;
     }
 
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
+        CancellationToken cancellationToken)
     {
-        if (exception is not ValidationException validationException)
-        {
-            return false;
-        }
-        
+        if (exception is not ValidationException validationException) return false;
+
         httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
         return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
@@ -32,6 +34,5 @@ public class ProblemExceptionHandler : IExceptionHandler
             },
             Exception = exception
         });
-
     }
 }

@@ -1,6 +1,11 @@
+#region
+
 using System.Text.Json;
-using Microsoft.OpenApi.Models;
+using System.Text.Json.Nodes;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.OpenApi;
 
@@ -18,38 +23,36 @@ public class SwaggerDefaultValues : IOperationFilter
             var response = operation.Responses[responseKey];
 
             foreach (var contentType in response.Content.Keys)
-            {
                 if (responseType.ApiResponseFormats.All(x => x.MediaType != contentType))
-                {
                     response.Content.Remove(contentType);
-                }
-            }
         }
 
-        if (operation.Parameters == null)
-        {
-            return;
-        }
+        if (operation.Parameters == null) return;
 
         foreach (var parameter in operation.Parameters)
         {
             var description = apiDescription.ParameterDescriptions
                 .First(p => p.Name == parameter.Name);
 
-            parameter.Description ??= description.ModelMetadata.Description;
-
-            if (parameter.Schema.Default == null 
-                && description.DefaultValue != null
-                && description.DefaultValue is not DBNull 
-                && description.ModelMetadata is { } modelMetadata)
+            // Cast to concrete type to mutate properties
+            if (parameter is OpenApiParameter openApiParameter)
             {
-                var json = JsonSerializer.Serialize(
-                    description.DefaultValue,
-                    description.ModelMetadata!.ModelType);
-                parameter.Schema.Default = OpenApiAnyFactory.CreateFromJson(json);
-            }
+                openApiParameter.Description ??= description.ModelMetadata?.Description;
 
-            parameter.Required |= description.IsRequired;
+                if (parameter.Schema is OpenApiSchema schema
+                    && schema.Default == null
+                    && description.DefaultValue != null
+                    && description.DefaultValue is not DBNull
+                    && description.ModelMetadata is { } modelMetadata)
+                {
+                    var json = JsonSerializer.Serialize(
+                        description.DefaultValue,
+                        description.ModelMetadata!.ModelType);
+                    schema.Default = JsonNode.Parse(json);
+                }
+
+                openApiParameter.Required |= description.IsRequired;
+            }
         }
     }
 }

@@ -1,5 +1,9 @@
+#region
+
 using Dapper;
 using Dometrain.Monolith.Api.Database;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Orders;
 
@@ -29,16 +33,13 @@ public class OrderRepository : IOrderRepository
         var order = await connection.QuerySingleOrDefaultAsync<Order>(
             "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where id = @orderId",
             new { orderId });
-        
-        if (order is null)
-        {
-            return null;
-        }
-        
+
+        if (order is null) return null;
+
         var items = await connection.QueryAsync<OrderItemDto>(
             "select order_id OrderId, course_id CourseId from order_items where order_id = @orderId",
             new { orderId });
-        
+
         order.CourseIds.AddRange(items.Select(x => x.CourseId));
         return order;
     }
@@ -49,7 +50,7 @@ public class OrderRepository : IOrderRepository
         var orders = (await connection.QueryAsync<Order>(
             "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where student_id = @studentId",
             new { studentId })).ToArray();
-        
+
         var items = (await connection.QueryAsync<OrderItemDto>(
             "select order_id OrderId, course_id CourseId from order_items where order_id = any (@orderIds)",
             new { orderIds = orders.Select(x => x.Id).ToArray() })).ToArray();
@@ -59,6 +60,7 @@ public class OrderRepository : IOrderRepository
             var courses = items.Where(x => x.OrderId == order.Id).Select(x => x.CourseId).ToArray();
             order.CourseIds.AddRange(courses);
         }
+
         return orders;
     }
 
@@ -74,25 +76,23 @@ public class OrderRepository : IOrderRepository
             CreatedAtUtc = DateTime.UtcNow,
             CourseIds = courseIds.ToList()
         };
-        
+
         await connection.ExecuteAsync(
             """
             insert into orders (id, student_id, created_at_utc) 
             values (@orderId, @studentId, @createdAtUtc)
             """, new { orderId = order.Id, studentId, createdAtUtc = order.CreatedAtUtc }
-            );
+        );
 
 
         foreach (var courseId in order.CourseIds)
-        {
             await connection.ExecuteAsync(
                 """
                 insert into order_items (order_id, course_id)
                 values (@orderId, @courseId)
                 """, new { orderId = order.Id, courseId }
             );
-        }
-        
+
         transaction.Commit();
         return order;
     }

@@ -1,14 +1,18 @@
+#region
+
 using Dapper;
 using Dometrain.Monolith.Api.Database;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Enrollments;
 
 public interface IEnrollmentRepository
 {
     Task<IEnumerable<Guid>> GetEnrolledCoursesAsync(Guid studentId);
-    
+
     Task<bool> EnrollToCourseAsync(Guid studentId, Guid courseId);
-    
+
     Task<bool> UnEnrollFromCourseAsync(Guid studentId, Guid courseId);
 }
 

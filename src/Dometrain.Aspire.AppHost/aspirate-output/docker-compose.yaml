@@ -5,8 +5,8 @@ services:
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
     ports:
-    - target: 18888
-      published: 18888
+      - target: 18888
+        published: 18888
     restart: unless-stopped
   main-db:
     container_name: "main-db"
@@ -19,8 +19,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "main-db"
     ports:
-    - target: 5432
-      published: 5433
+      - target: 5432
+        published: 5433
     restart: unless-stopped
   redis:
     container_name: "redis"
@@ -30,12 +30,12 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "redis"
     ports:
-    - target: 6379
-      published: 6379
+      - target: 6379
+        published: 6379
     command:
-    - "-c"
-    - "redis-server --requirepass $REDIS_PASSWORD"
-    - "/bin/sh"
+      - "-c"
+      - "redis-server --requirepass $REDIS_PASSWORD"
+      - "/bin/sh"
     restart: unless-stopped
   rabbitmq:
     container_name: "rabbitmq"
@@ -46,10 +46,10 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "rabbitmq"
     ports:
-    - target: 5672
-      published: 5672
-    - target: 15672
-      published: 15672
+      - target: 5672
+        published: 5672
+      - target: 15672
+        published: 15672
     restart: unless-stopped
   dometrain-api:
     container_name: "dometrain-api"
@@ -67,8 +67,8 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_SERVICE_NAME: "dometrain-api"
     ports:
-    - target: 8080
-      published: 10000
-    - target: 8443
-      published: 10001
+      - target: 8080
+        published: 10000
+      - target: 8443
+        published: 10001
     restart: unless-stopped

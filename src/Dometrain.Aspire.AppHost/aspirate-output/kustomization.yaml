@@ -1,9 +1,9 @@
 resources:
-- main-db
-- redis
-- rabbitmq
-- dometrain-api
-- dashboard.yaml
+  - main-db
+  - redis
+  - rabbitmq
+  - dometrain-api
+  - dashboard.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

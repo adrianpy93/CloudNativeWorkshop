@@ -1,6 +1,10 @@
+#region
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Identity;
 
@@ -21,10 +25,8 @@ public class ApiKeyAuthFilter : IAuthorizationFilter
             context.Result = new UnauthorizedObjectResult("API Key missing");
             return;
         }
-        
+
         if (_identitySettings.Value.AdminApiKey != extractedApiKey)
-        {
             context.Result = new UnauthorizedObjectResult("Invalid API Key");
-        }
     }
 }

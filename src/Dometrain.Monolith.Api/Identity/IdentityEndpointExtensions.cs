@@ -6,7 +6,7 @@ public static class IdentityEndpointExtensions
     {
         app.MapPost("/identity/login", IdentityEndpoints.Login)
             .AllowAnonymous();
-        
+
         return app;
     }
 }

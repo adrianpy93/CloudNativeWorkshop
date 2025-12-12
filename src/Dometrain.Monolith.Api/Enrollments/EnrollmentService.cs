@@ -1,24 +1,29 @@
+#region
+
 using Dometrain.Monolith.Api.Courses;
 using Dometrain.Monolith.Api.Students;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Enrollments;
 
 public interface IEnrollmentService
 {
     Task<Enrollments?> GetStudentEnrollmentsAsync(Guid studentId);
-    
+
     Task<bool?> EnrollToCourseAsync(Guid studentId, Guid courseId);
-    
+
     Task<bool?> UnEnrollFromCourseAsync(Guid studentId, Guid courseId);
 }
 
 public class EnrollmentService : IEnrollmentService
 {
+    private readonly ICourseRepository _courseRepository;
     private readonly IEnrollmentRepository _enrollmentRepository;
     private readonly IStudentRepository _studentRepository;
-    private readonly ICourseRepository _courseRepository;
 
-    public EnrollmentService(IEnrollmentRepository enrollmentRepository, IStudentRepository studentRepository, ICourseRepository courseRepository)
+    public EnrollmentService(IEnrollmentRepository enrollmentRepository, IStudentRepository studentRepository,
+        ICourseRepository courseRepository)
     {
         _enrollmentRepository = enrollmentRepository;
         _studentRepository = studentRepository;
@@ -29,10 +34,7 @@ public class EnrollmentService : IEnrollmentService
     {
         var student = await _studentRepository.GetByIdAsync(studentId);
 
-        if (student is null)
-        {
-            return null;
-        }
+        if (student is null) return null;
 
         var courseIds = await _enrollmentRepository.GetEnrolledCoursesAsync(studentId);
         return new Enrollments
@@ -45,17 +47,11 @@ public class EnrollmentService : IEnrollmentService
     {
         var student = await _studentRepository.GetByIdAsync(studentId);
 
-        if (student is null)
-        {
-            return null;
-        }
-        
+        if (student is null) return null;
+
         var course = await _courseRepository.GetByIdAsync(courseId);
 
-        if (course is null)
-        {
-            return null;
-        }
+        if (course is null) return null;
 
         return await _enrollmentRepository.EnrollToCourseAsync(studentId, courseId);
     }
@@ -64,17 +60,11 @@ public class EnrollmentService : IEnrollmentService
     {
         var student = await _studentRepository.GetByIdAsync(studentId);
 
-        if (student is null)
-        {
-            return null;
-        }
-        
+        if (student is null) return null;
+
         var course = await _courseRepository.GetByIdAsync(courseId);
 
-        if (course is null)
-        {
-            return null;
-        }
+        if (course is null) return null;
 
         return await _enrollmentRepository.UnEnrollFromCourseAsync(studentId, courseId);
     }

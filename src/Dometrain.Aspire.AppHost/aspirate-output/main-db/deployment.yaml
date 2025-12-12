@@ -19,15 +19,15 @@ spec:
         app: main-db
     spec:
       containers:
-      - name: main-db
-        image: docker.io/library/postgres:17.5
-        imagePullPolicy: IfNotPresent
-        ports:
-        - name: tcp
-          containerPort: 5432
-        envFrom:
-        - configMapRef:
-            name: main-db-env
-        - secretRef:
-            name: main-db-secrets
+        - name: main-db
+          image: docker.io/library/postgres:17.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: tcp
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: main-db-env
+            - secretRef:
+                name: main-db-secrets
       terminationGracePeriodSeconds: 180

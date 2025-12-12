@@ -6,16 +6,16 @@ public static class ShoppingCartEndpointExtensions
     {
         app.MapGet("/cart/me", ShoppingCartEndpoints.GetMe)
             .RequireAuthorization();
-        
+
         app.MapPost("/cart/me/courses/{courseId:guid}", ShoppingCartEndpoints.AddCourse)
             .RequireAuthorization();
-        
+
         app.MapDelete("/cart/me/courses/{courseId:guid}", ShoppingCartEndpoints.RemoveCourse)
             .RequireAuthorization();
-        
+
         app.MapDelete("/cart/me", ShoppingCartEndpoints.ClearCart)
             .RequireAuthorization();
-        
+
         return app;
     }
 }

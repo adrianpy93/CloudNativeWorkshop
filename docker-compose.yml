@@ -1,11 +1,11 @@
 ﻿services:
-#  dometrain.monolith.api:
-#    image: dometrain.monolith.api
-#    build:
-#      context: .
-#      dockerfile: src/Dometrain.Monolith.Api/Dockerfile
-#    ports:
-#      - 8080:8080
+  #  dometrain.monolith.api:
+  #    image: dometrain.monolith.api
+  #    build:
+  #      context: .
+  #      dockerfile: src/Dometrain.Monolith.Api/Dockerfile
+  #    ports:
+  #      - 8080:8080
 
   db:
     image: postgres:16.2

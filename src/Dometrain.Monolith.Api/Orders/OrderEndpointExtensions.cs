@@ -6,14 +6,14 @@ public static class OrderEndpointExtensions
     {
         app.MapGet("/orders", OrderEndpoints.GetAllForStudent)
             .RequireAuthorization();
-        
+
         app.MapGet("/orders/{orderId:guid}", OrderEndpoints.Get)
             .WithName(OrderEndpoints.GetOrderEndpointName)
             .RequireAuthorization();
-        
+
         app.MapPost("/orders", OrderEndpoints.Place)
             .RequireAuthorization();
-        
+
         return app;
     }
 }

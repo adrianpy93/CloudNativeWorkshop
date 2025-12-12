@@ -1,22 +1,26 @@
+#region
+
 using Dapper;
 using Dometrain.Monolith.Api.Database;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Students;
 
 public interface IStudentRepository
 {
     Task<string?> GetPasswordHashAsync(string email);
-    
+
     Task<Student?> CreateAsync(Student student, string hash);
 
     Task<bool> EmailExistsAsync(string email);
-    
+
     Task<IEnumerable<Student?>> GetAllAsync(int pageNumber, int pageSize);
-    
+
     Task<Student?> GetByEmailAsync(string email);
-    
+
     Task<Student?> GetByIdAsync(Guid id);
-    
+
     Task<bool> DeleteByIdAsync(Guid id);
 }
 
@@ -45,10 +49,7 @@ public class StudentRepository : IStudentRepository
             values (@id, @email, @fullname, @password_hash)
             """, new { id = student.Id, email = student.Email, fullname = student.FullName, password_hash = hash });
 
-        if (result > 0)
-        {
-            return student;
-        }
+        if (result > 0) return student;
 
         return null;
     }
@@ -66,7 +67,7 @@ public class StudentRepository : IStudentRepository
     {
         using var connection = await _dbConnectionFactory.CreateConnectionAsync();
         return await connection.QueryAsync<Student>(
-            "select * from students limit @pageSize offset @pageOffset", 
+            "select * from students limit @pageSize offset @pageOffset",
             new { pageSize, pageOffset = (pageNumber - 1) * pageSize });
     }
 

@@ -1,20 +1,24 @@
+#region
+
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Students;
 
 public interface IStudentService
 {
     Task<bool> CheckCredentialsAsync(string email, string password);
-    
+
     Task<Student?> CreateAsync(Student student, string password);
-    
+
     Task<IEnumerable<Student?>> GetAllAsync(int pageNumber, int pageSize);
-    
+
     Task<Student?> GetByEmailAsync(string email);
-    
+
     Task<Student?> GetByIdAsync(Guid id);
-    
+
     Task<bool> DeleteAsync(Guid id);
 }
 
@@ -24,7 +28,8 @@ public class StudentService : IStudentService
     private readonly IStudentRepository _studentRepository;
     private readonly IValidator<Student> _validator;
 
-    public StudentService(IPasswordHasher<Student> passwordHasher, IStudentRepository studentRepository, IValidator<Student> validator)
+    public StudentService(IPasswordHasher<Student> passwordHasher, IStudentRepository studentRepository,
+        IValidator<Student> validator)
     {
         _passwordHasher = passwordHasher;
         _studentRepository = studentRepository;
@@ -35,11 +40,8 @@ public class StudentService : IStudentService
     {
         var storedHash = await _studentRepository.GetPasswordHashAsync(email);
 
-        if (storedHash is null)
-        {
-            return false;
-        }
-       
+        if (storedHash is null) return false;
+
         var valid = _passwordHasher.VerifyHashedPassword(null!, storedHash, password);
         return valid == PasswordVerificationResult.Success;
     }
@@ -56,7 +58,7 @@ public class StudentService : IStudentService
         if (pageNumber < 1) pageNumber = 1;
         if (pageSize < 1) pageSize = 1;
         if (pageSize > 50) pageSize = 50;
-        
+
         return await _studentRepository.GetAllAsync(pageNumber, pageSize);
     }
 
