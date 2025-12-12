@@ -1,0 +1,15 @@
+{
+  "projectPath": ".",
+  "outputPath": "aspirate-output",
+  "containerImageTags": [
+    "latest"
+  ],
+  "containerBuilder": "docker",
+  "outputFormat": "kustomize",
+  "privateRegistryEmail": "aspir8@aka.ms",
+  "secrets": {
+    "salt": "03INJBFs1MSl7Qzb",
+    "hash": "\u002B9NeLxYZVb5r3UPJeewSwTJZDNbU65PFh/0Dv7SvRso=",
+    "secrets": {}
+  }
+}
