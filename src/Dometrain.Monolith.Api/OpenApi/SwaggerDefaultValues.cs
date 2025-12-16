@@ -20,7 +20,9 @@ public class SwaggerDefaultValues : IOperationFilter
             var responseKey = responseType.IsDefaultResponse
                 ? "default"
                 : responseType.StatusCode.ToString();
-            var response = operation.Responses[responseKey];
+
+            if (operation.Responses?.TryGetValue(responseKey, out var response) != true || response?.Content == null)
+                continue;
 
             foreach (var contentType in response.Content.Keys)
                 if (responseType.ApiResponseFormats.All(x => x.MediaType != contentType))
@@ -35,24 +37,21 @@ public class SwaggerDefaultValues : IOperationFilter
                 .First(p => p.Name == parameter.Name);
 
             // Cast to concrete type to mutate properties
-            if (parameter is OpenApiParameter openApiParameter)
+            if (parameter is not OpenApiParameter openApiParameter) continue;
+            openApiParameter.Description ??= description.ModelMetadata.Description;
+
+            if (parameter.Schema is OpenApiSchema { Default: null } schema
+                && description.DefaultValue != null
+                && description.DefaultValue is not DBNull
+                && description.ModelMetadata is { } modelMetadata)
             {
-                openApiParameter.Description ??= description.ModelMetadata?.Description;
-
-                if (parameter.Schema is OpenApiSchema schema
-                    && schema.Default == null
-                    && description.DefaultValue != null
-                    && description.DefaultValue is not DBNull
-                    && description.ModelMetadata is { } modelMetadata)
-                {
-                    var json = JsonSerializer.Serialize(
-                        description.DefaultValue,
-                        description.ModelMetadata!.ModelType);
-                    schema.Default = JsonNode.Parse(json);
-                }
-
-                openApiParameter.Required |= description.IsRequired;
+                var json = JsonSerializer.Serialize(
+                    description.DefaultValue,
+                    description.ModelMetadata.ModelType);
+                schema.Default = JsonNode.Parse(json);
             }
+
+            openApiParameter.Required |= description.IsRequired;
         }
     }
 }

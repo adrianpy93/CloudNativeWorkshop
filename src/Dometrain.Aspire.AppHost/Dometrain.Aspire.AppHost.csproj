@@ -17,7 +17,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Dometrain.Monolith.Api\Dometrain.Monolith.Api.csproj"/>
-        <ProjectReference Include="..\Dometrain.Aspire.ServiceDefaults\Dometrain.Aspire.ServiceDefaults.csproj"/>
+        <ProjectReference Include="..\Dometrain.Aspire.ServiceDefaults\Dometrain.Aspire.ServiceDefaults.csproj" IsAspireProjectResource="false"/>
     </ItemGroup>
 
 </Project>
