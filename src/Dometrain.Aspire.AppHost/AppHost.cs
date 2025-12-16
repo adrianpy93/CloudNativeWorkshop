@@ -8,10 +8,6 @@ postgres.WithBindMount("./postgres-init", "/docker-entrypoint-initdb.d");
 
 var mainDb = postgres.AddDatabase("dometrain");
 
-var cartDb = builder.AddAzureCosmosDB("carts")
-    .RunAsEmulator()
-    .AddCosmosDatabase("cartdb");
-
 var redis = builder.AddRedis("redis");
 //.WithLifetime(ContainerLifetime.Persistent)
 
@@ -22,7 +18,6 @@ var rabbitmq = builder.AddRabbitMQ("rabbitmq")
 builder.AddProject("dometrain-api", "../Dometrain.Monolith.Api/Dometrain.Monolith.Api.csproj")
     //.WithReplicas(5)
     .WithReference(mainDb)
-    .WithReference(cartDb)
     .WithReference(redis)
     .WithReference(rabbitmq);
 

@@ -1,92 +1,60 @@
-#region
-
-using Dapper;
 using Dometrain.Monolith.Api.Database;
-
-#endregion
+using Microsoft.EntityFrameworkCore;
 
 namespace Dometrain.Monolith.Api.Orders;
-
-public record OrderItemDto(Guid OrderId, Guid CourseId);
 
 public interface IOrderRepository
 {
     Task<Order?> GetByIdAsync(Guid orderId);
-
     Task<IEnumerable<Order>> GetAllForStudentAsync(Guid studentId);
-
     Task<Order?> PlaceAsync(Guid studentId, IEnumerable<Guid> courseIds);
 }
 
-public class OrderRepository(IDbConnectionFactory dbConnectionFactory) : IOrderRepository
+public class OrderRepository(IDbContextFactory<DometrainDbContext> contextFactory) : IOrderRepository
 {
     public async Task<Order?> GetByIdAsync(Guid orderId)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var order = await connection.QuerySingleOrDefaultAsync<Order>(
-            "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where id = @orderId",
-            new { orderId });
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-        if (order is null) return null;
-
-        var items = await connection.QueryAsync<OrderItemDto>(
-            "select order_id OrderId, course_id CourseId from order_items where order_id = @orderId",
-            new { orderId });
-
-        order.CourseIds.AddRange(items.Select(x => x.CourseId));
-        return order;
+        return await context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 
     public async Task<IEnumerable<Order>> GetAllForStudentAsync(Guid studentId)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var orders = (await connection.QueryAsync<Order>(
-            "select id, student_id StudentId, created_at_utc CreatedAtUtc from orders where student_id = @studentId",
-            new { studentId })).ToArray();
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-        var items = (await connection.QueryAsync<OrderItemDto>(
-            "select order_id OrderId, course_id CourseId from order_items where order_id = any (@orderIds)",
-            new { orderIds = orders.Select(x => x.Id).ToArray() })).ToArray();
-
-        foreach (var order in orders)
-        {
-            var courses = items.Where(x => x.OrderId == order.Id).Select(x => x.CourseId).ToArray();
-            order.CourseIds.AddRange(courses);
-        }
-
-        return orders;
+        return await context.Orders
+            .Where(o => o.StudentId == studentId)
+            .Include(o => o.OrderItems)
+            .ToListAsync();
     }
 
     public async Task<Order?> PlaceAsync(Guid studentId, IEnumerable<Guid> courseIds)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var transaction = connection.BeginTransaction();
+        await using var context = await contextFactory.CreateDbContextAsync();
 
         var order = new Order
         {
             Id = Guid.NewGuid(),
             StudentId = studentId,
-            CreatedAtUtc = DateTime.UtcNow,
-            CourseIds = courseIds.ToList()
+            CreatedAtUtc = DateTime.UtcNow
         };
 
-        await connection.ExecuteAsync(
-            """
-            insert into orders (id, student_id, created_at_utc) 
-            values (@orderId, @studentId, @createdAtUtc)
-            """, new { orderId = order.Id, studentId, createdAtUtc = order.CreatedAtUtc }
-        );
+        // Add order items
+        foreach (var courseId in courseIds)
+        {
+            order.OrderItems.Add(new OrderItem
+            {
+                OrderId = order.Id,
+                CourseId = courseId
+            });
+        }
 
+        context.Orders.Add(order);
 
-        foreach (var courseId in order.CourseIds)
-            await connection.ExecuteAsync(
-                """
-                insert into order_items (order_id, course_id)
-                values (@orderId, @courseId)
-                """, new { orderId = order.Id, courseId }
-            );
-
-        transaction.Commit();
-        return order;
+        var result = await context.SaveChangesAsync();
+        return result > 0 ? order : null;
     }
 }

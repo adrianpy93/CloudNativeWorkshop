@@ -14,6 +14,7 @@ using Dometrain.Monolith.Api.Students;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
@@ -64,12 +65,18 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Si
 
 builder.Services.Configure<IdentitySettings>(builder.Configuration.GetSection(IdentitySettings.SettingsKey));
 
-builder.AddNpgsqlDataSource("dometrain");
-builder.AddAzureCosmosClient("carts");
+builder.AddNpgsqlDbContext<DometrainDbContext>("dometrain",
+    configureSettings: settings =>
+    {
+        // Disable SSL for local development - Aspire PostgreSQL container doesn't have SSL configured
+        if (!string.IsNullOrEmpty(settings.ConnectionString) &&
+            !settings.ConnectionString.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase))
+        {
+            settings.ConnectionString += ";SSL Mode=Disable";
+        }
+    });
+builder.Services.AddDbContextFactory<DometrainDbContext>(lifetime: ServiceLifetime.Singleton);
 builder.AddRedisClient("redis");
-
-builder.Services.AddSingleton<DbInitializer>();
-builder.Services.AddSingleton<IDbConnectionFactory, NpgsqlConnectionFactory>();
 
 builder.Services.AddSingleton<IPasswordHasher<Student>, PasswordHasher<Student>>();
 builder.Services.AddSingleton<IIdentityService, IdentityService>();
@@ -118,7 +125,29 @@ app.MapShoppingCartEndpoints();
 app.MapEnrollmentEndpoints();
 app.MapOrderEndpoints();
 
-var db = app.Services.GetRequiredService<DbInitializer>();
-await db.InitializeAsync();
+// Apply EF Core migrations and seed admin user on startup
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<DometrainDbContext>();
+    await context.Database.MigrateAsync();
+
+    // Seed admin user if not exists
+    var adminId = Guid.Parse("005d25b1-bfc8-4391-b349-6cec00d1416c");
+    var adminEmail = "admin@dometrain.com";
+
+    if (!await context.Students.AnyAsync(s => s.Id == adminId))
+    {
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<Student>>();
+        var adminUser = new Student
+        {
+            Id = adminId,
+            Email = adminEmail,
+            FullName = "Admin"
+        };
+        adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "admin");
+        context.Students.Add(adminUser);
+        await context.SaveChangesAsync();
+    }
+}
 
 app.Run();

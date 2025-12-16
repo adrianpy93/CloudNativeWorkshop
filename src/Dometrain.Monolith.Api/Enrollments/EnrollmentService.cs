@@ -9,7 +9,7 @@ namespace Dometrain.Monolith.Api.Enrollments;
 
 public interface IEnrollmentService
 {
-    Task<Enrollments?> GetStudentEnrollmentsAsync(Guid studentId);
+    Task<StudentEnrollments?> GetStudentEnrollmentsAsync(Guid studentId);
 
     Task<bool?> EnrollToCourseAsync(Guid studentId, Guid courseId);
 
@@ -22,14 +22,14 @@ public class EnrollmentService(
     ICourseRepository courseRepository)
     : IEnrollmentService
 {
-    public async Task<Enrollments?> GetStudentEnrollmentsAsync(Guid studentId)
+    public async Task<StudentEnrollments?> GetStudentEnrollmentsAsync(Guid studentId)
     {
         var student = await studentRepository.GetByIdAsync(studentId);
 
         if (student is null) return null;
 
         var courseIds = await enrollmentRepository.GetEnrolledCoursesAsync(studentId);
-        return new Enrollments
+        return new StudentEnrollments
         {
             StudentId = studentId, CourseIds = courseIds.ToList()
         };

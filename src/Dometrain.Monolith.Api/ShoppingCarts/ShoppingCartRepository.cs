@@ -1,102 +1,94 @@
-#region
-
-using System.Net;
-using Microsoft.Azure.Cosmos;
-
-#endregion
+using Dometrain.Monolith.Api.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dometrain.Monolith.Api.ShoppingCarts;
-
-public class ShoppingCartItemDto
-{
-    public required Guid StudentId { get; init; }
-    public required Guid CourseId { get; init; }
-}
 
 public interface IShoppingCartRepository
 {
     Task<bool> AddCourseAsync(Guid studentId, Guid courseId);
-
     Task<ShoppingCart?> GetByIdAsync(Guid studentId);
-
     Task<bool> RemoveItemAsync(Guid studentId, Guid courseId);
-
     Task<bool> ClearAsync(Guid studentId);
 }
 
-public class ShoppingCartRepository(CosmosClient cosmosClient) : IShoppingCartRepository
+public class ShoppingCartRepository(IDbContextFactory<DometrainDbContext> contextFactory) : IShoppingCartRepository
 {
-    private const string DatabaseId = "cartdb";
-    private const string ContainerId = "carts";
-
-
     public async Task<bool> AddCourseAsync(Guid studentId, Guid courseId)
     {
-        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
-        ShoppingCart cart;
-        try
-        {
-            cart = await container.ReadItemAsync<ShoppingCart>(studentId.ToString(),
-                new PartitionKey(studentId.ToString()));
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        await using var context = await contextFactory.CreateDbContextAsync();
+
+        // Get or create cart for student
+        var cart = await context.ShoppingCarts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.StudentId == studentId);
+
+        if (cart is null)
         {
             cart = new ShoppingCart
             {
-                StudentId = studentId,
-                CourseIds = []
+                Id = Guid.NewGuid(),
+                StudentId = studentId
             };
+            context.ShoppingCarts.Add(cart);
         }
 
-        if (!cart.CourseIds.Contains(courseId)) cart.CourseIds.Add(courseId);
+        // Check if course already in cart
+        if (cart.Items.Any(i => i.CourseId == courseId))
+        {
+            return true; // Already exists, consider it a success
+        }
 
-        var response = await container.UpsertItemAsync(cart);
-        return response.StatusCode is HttpStatusCode.OK or HttpStatusCode.Created;
+        // Add course to cart
+        cart.Items.Add(new ShoppingCartItem
+        {
+            ShoppingCartId = cart.Id,
+            CourseId = courseId
+        });
+
+        var result = await context.SaveChangesAsync();
+        return result > 0;
     }
 
     public async Task<ShoppingCart?> GetByIdAsync(Guid studentId)
     {
-        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
-        try
-        {
-            return await container.ReadItemAsync<ShoppingCart>(studentId.ToString(),
-                new PartitionKey(studentId.ToString()));
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
+        await using var context = await contextFactory.CreateDbContextAsync();
+
+        return await context.ShoppingCarts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.StudentId == studentId);
     }
 
     public async Task<bool> RemoveItemAsync(Guid studentId, Guid courseId)
     {
-        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
-        try
-        {
-            var cart = await GetByIdAsync(studentId);
-            if (cart is null) return true;
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-            cart.CourseIds.Remove(courseId);
-            var response = await container.UpsertItemAsync(cart);
-            return response.StatusCode is HttpStatusCode.OK or HttpStatusCode.Created;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return true;
-        }
+        var cart = await context.ShoppingCarts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.StudentId == studentId);
+
+        if (cart is null) return true; // No cart means item isn't there
+
+        var item = cart.Items.FirstOrDefault(i => i.CourseId == courseId);
+        if (item is null) return true; // Item not in cart
+
+        cart.Items.Remove(item);
+        await context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> ClearAsync(Guid studentId)
     {
-        var container = cosmosClient.GetContainer(DatabaseId, ContainerId);
-        try
-        {
-            await container.DeleteItemAsync<ShoppingCart>(studentId.ToString(), new PartitionKey(studentId.ToString()));
-            return true;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return true;
-        }
+        await using var context = await contextFactory.CreateDbContextAsync();
+
+        var cart = await context.ShoppingCarts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.StudentId == studentId);
+
+        if (cart is null) return true; // No cart to clear
+
+        // Remove the cart (cascade will delete items)
+        context.ShoppingCarts.Remove(cart);
+        await context.SaveChangesAsync();
+        return true;
     }
 }

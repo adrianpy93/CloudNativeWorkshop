@@ -1,52 +1,68 @@
-#region
-
-using Dapper;
 using Dometrain.Monolith.Api.Database;
-
-#endregion
+using Microsoft.EntityFrameworkCore;
 
 namespace Dometrain.Monolith.Api.Enrollments;
 
 public interface IEnrollmentRepository
 {
     Task<IEnumerable<Guid>> GetEnrolledCoursesAsync(Guid studentId);
-
     Task<bool> EnrollToCourseAsync(Guid studentId, Guid courseId);
-
     Task<bool> UnEnrollFromCourseAsync(Guid studentId, Guid courseId);
 }
 
-public class EnrollmentRepository(IDbConnectionFactory dbConnectionFactory) : IEnrollmentRepository
+public class EnrollmentRepository(IDbContextFactory<DometrainDbContext> contextFactory) : IEnrollmentRepository
 {
     public async Task<IEnumerable<Guid>> GetEnrolledCoursesAsync(Guid studentId)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        return await connection.QueryAsync<Guid>(
-            "select course_id from enrollments where student_id = @studentId",
-            new { studentId });
+        await using var context = await contextFactory.CreateDbContextAsync();
+
+        return await context.Enrollments
+            .Where(e => e.StudentId == studentId)
+            .Select(e => e.CourseId)
+            .ToListAsync();
     }
 
     public async Task<bool> EnrollToCourseAsync(Guid studentId, Guid courseId)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var result = await connection.ExecuteAsync(
-            """
-            insert into enrollments (student_id, course_id)
-            values (@studentId, @courseId) on conflict do nothing
-            """, new { studentId, courseId });
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-        return result > 0;
+        // Check if already enrolled (equivalent to ON CONFLICT DO NOTHING)
+        var exists = await context.Enrollments
+            .AnyAsync(e => e.StudentId == studentId && e.CourseId == courseId);
+
+        if (exists) return false;
+
+        var enrollment = new Enrollment
+        {
+            StudentId = studentId,
+            CourseId = courseId
+        };
+
+        context.Enrollments.Add(enrollment);
+
+        try
+        {
+            var result = await context.SaveChangesAsync();
+            return result > 0;
+        }
+        catch (DbUpdateException)
+        {
+            // Handle race condition where enrollment was added between check and insert
+            return false;
+        }
     }
 
     public async Task<bool> UnEnrollFromCourseAsync(Guid studentId, Guid courseId)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var result = await connection.ExecuteAsync(
-            """
-            delete from enrollments
-            where student_id = @studentId and course_id = @courseId
-            """, new { studentId, courseId });
+        await using var context = await contextFactory.CreateDbContextAsync();
 
+        var enrollment = await context.Enrollments
+            .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseId == courseId);
+
+        if (enrollment is null) return false;
+
+        context.Enrollments.Remove(enrollment);
+        var result = await context.SaveChangesAsync();
         return result > 0;
     }
 }

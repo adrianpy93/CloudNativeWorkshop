@@ -1,8 +1,4 @@
-#region
-
 using System.Text.RegularExpressions;
-
-#endregion
 
 namespace Dometrain.Monolith.Api.Courses;
 
@@ -14,13 +10,13 @@ public partial class Course
 
     public required string Description { get; set; }
 
-    public string Slug => GenerateSlug();
+    public string Slug { get; set; } = string.Empty;
 
     public required string Author { get; set; }
 
-    private string GenerateSlug()
+    public void GenerateSlug()
     {
-        return SlugRegex().Replace(Name, string.Empty)
+        Slug = SlugRegex().Replace(Name, string.Empty)
             .ToLower().Replace(" ", "-");
     }
 

@@ -1,88 +1,75 @@
-#region
-
-using Dapper;
 using Dometrain.Monolith.Api.Database;
-
-#endregion
+using Microsoft.EntityFrameworkCore;
 
 namespace Dometrain.Monolith.Api.Students;
 
 public interface IStudentRepository
 {
     Task<string?> GetPasswordHashAsync(string email);
-
     Task<Student?> CreateAsync(Student student, string hash);
-
     Task<bool> EmailExistsAsync(string email);
-
     Task<IEnumerable<Student?>> GetAllAsync(int pageNumber, int pageSize);
-
     Task<Student?> GetByEmailAsync(string email);
-
     Task<Student?> GetByIdAsync(Guid id);
-
     Task<bool> DeleteByIdAsync(Guid id);
 }
 
-public class StudentRepository(IDbConnectionFactory dbConnectionFactory) : IStudentRepository
+public class StudentRepository(IDbContextFactory<DometrainDbContext> contextFactory) : IStudentRepository
 {
     public async Task<string?> GetPasswordHashAsync(string email)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        return await connection.QuerySingleOrDefaultAsync<string>(
-            "select password_hash from students where email = @email", new { email });
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var student = await context.Students.FirstOrDefaultAsync(s => s.Email == email);
+        return student?.PasswordHash;
     }
 
     public async Task<Student?> CreateAsync(Student student, string hash)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var result = await connection.ExecuteAsync(
-            """
-            insert into students (id, email, fullname, password_hash) 
-            values (@id, @email, @fullname, @password_hash)
-            """, new { id = student.Id, email = student.Email, fullname = student.FullName, password_hash = hash });
+        await using var context = await contextFactory.CreateDbContextAsync();
 
-        return result > 0 
-            ? student 
-            : null;
+        student.PasswordHash = hash;
+        context.Students.Add(student);
+
+        var result = await context.SaveChangesAsync();
+        return result > 0 ? student : null;
     }
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var result = await connection.QuerySingleOrDefaultAsync<int>(
-            "select 1 from students where email = @email", new { email });
-
-        return result > 0;
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Students.AnyAsync(s => s.Email == email);
     }
 
     public async Task<IEnumerable<Student?>> GetAllAsync(int pageNumber, int pageSize)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        return await connection.QueryAsync<Student>(
-            "select * from students limit @pageSize offset @pageOffset",
-            new { pageSize, pageOffset = (pageNumber - 1) * pageSize });
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Students
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<Student?> GetByEmailAsync(string email)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        return await connection.QuerySingleOrDefaultAsync<Student>(
-            "select * from students where email = @email", new { email });
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Students.FirstOrDefaultAsync(s => s.Email == email);
     }
 
     public async Task<Student?> GetByIdAsync(Guid id)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        return await connection.QuerySingleOrDefaultAsync<Student>(
-            "select * from students where id = @id", new { id });
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Students.FindAsync(id);
     }
 
     public async Task<bool> DeleteByIdAsync(Guid id)
     {
-        using var connection = await dbConnectionFactory.CreateConnectionAsync();
-        var result = await connection.ExecuteAsync(
-            "delete from students where id = @id", new { id });
+        await using var context = await contextFactory.CreateDbContextAsync();
+
+        var student = await context.Students.FindAsync(id);
+        if (student is null) return false;
+
+        context.Students.Remove(student);
+        var result = await context.SaveChangesAsync();
         return result > 0;
     }
 }
