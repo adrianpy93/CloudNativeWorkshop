@@ -1,6 +1,10 @@
-using Dometrain.Monolith.Api.Courses;
+#region
+
+using Dometrain.Monolith.Api.Courses.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Database.Configurations;
 

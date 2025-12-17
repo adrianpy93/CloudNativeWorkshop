@@ -1,9 +1,13 @@
-using Dometrain.Monolith.Api.Courses;
-using Dometrain.Monolith.Api.Enrollments;
-using Dometrain.Monolith.Api.Orders;
-using Dometrain.Monolith.Api.ShoppingCarts;
-using Dometrain.Monolith.Api.Students;
+#region
+
+using Dometrain.Monolith.Api.Courses.Models;
+using Dometrain.Monolith.Api.Enrollments.Models;
+using Dometrain.Monolith.Api.Orders.Models;
+using Dometrain.Monolith.Api.ShoppingCarts.Models;
+using Dometrain.Monolith.Api.Students.Models;
 using Microsoft.EntityFrameworkCore;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Database;
 

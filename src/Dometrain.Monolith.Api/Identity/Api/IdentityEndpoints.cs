@@ -1,0 +1,37 @@
+#region
+
+using Dometrain.Monolith.Api.Identity.Interfaces;
+using Dometrain.Monolith.Api.Identity.Requests;
+using Dometrain.Monolith.Api.Students.Interfaces;
+using FluentValidation;
+using Microsoft.Extensions.Options;
+
+#endregion
+
+namespace Dometrain.Monolith.Api.Identity.Api;
+
+public static class IdentityEndpoints
+{
+    public static async Task<IResult> Login(
+        StudentLoginRequest request,
+        IStudentService studentService,
+        IIdentityService identityService,
+        IOptions<IdentitySettings> identitySettings)
+    {
+        var isValid = await studentService.CheckCredentialsAsync(
+            request.Email, request.Password);
+
+        if (!isValid) throw new ValidationException("Invalid login request");
+
+        var user = await studentService.GetByEmailAsync(request.Email);
+
+        var jwt = identityService.GenerateToken(user!.Id, request.Email);
+
+        return Results.Ok(new
+        {
+            token_type = "Bearer",
+            access_token = jwt,
+            expires_in = identitySettings.Value.Lifetime.TotalSeconds
+        });
+    }
+}

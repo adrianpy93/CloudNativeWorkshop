@@ -1,6 +1,10 @@
-using Dometrain.Monolith.Api.Orders;
+#region
+
+using Dometrain.Monolith.Api.Orders.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Database.Configurations;
 

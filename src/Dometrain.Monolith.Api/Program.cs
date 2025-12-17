@@ -2,15 +2,34 @@
 
 using System.Text;
 using Dometrain.Aspire.ServiceDefaults;
-using Dometrain.Monolith.Api.Courses;
+using Dometrain.Monolith.Api.Courses.Api;
+using Dometrain.Monolith.Api.Courses.Interfaces;
+using Dometrain.Monolith.Api.Courses.Repositories;
+using Dometrain.Monolith.Api.Courses.Services;
 using Dometrain.Monolith.Api.Database;
-using Dometrain.Monolith.Api.Enrollments;
+using Dometrain.Monolith.Api.Enrollments.Api;
+using Dometrain.Monolith.Api.Enrollments.Interfaces;
+using Dometrain.Monolith.Api.Enrollments.Repositories;
+using Dometrain.Monolith.Api.Enrollments.Services;
 using Dometrain.Monolith.Api.ErrorHandling;
 using Dometrain.Monolith.Api.Identity;
+using Dometrain.Monolith.Api.Identity.Api;
+using Dometrain.Monolith.Api.Identity.Interfaces;
+using Dometrain.Monolith.Api.Identity.Services;
 using Dometrain.Monolith.Api.OpenApi;
-using Dometrain.Monolith.Api.Orders;
-using Dometrain.Monolith.Api.ShoppingCarts;
-using Dometrain.Monolith.Api.Students;
+using Dometrain.Monolith.Api.Orders.Api;
+using Dometrain.Monolith.Api.Orders.Interfaces;
+using Dometrain.Monolith.Api.Orders.Repositories;
+using Dometrain.Monolith.Api.Orders.Services;
+using Dometrain.Monolith.Api.ShoppingCarts.Api;
+using Dometrain.Monolith.Api.ShoppingCarts.Interfaces;
+using Dometrain.Monolith.Api.ShoppingCarts.Repositories;
+using Dometrain.Monolith.Api.ShoppingCarts.Services;
+using Dometrain.Monolith.Api.Students.Api;
+using Dometrain.Monolith.Api.Students.Interfaces;
+using Dometrain.Monolith.Api.Students.Models;
+using Dometrain.Monolith.Api.Students.Repositories;
+using Dometrain.Monolith.Api.Students.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -66,14 +85,12 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Si
 builder.Services.Configure<IdentitySettings>(builder.Configuration.GetSection(IdentitySettings.SettingsKey));
 
 builder.AddNpgsqlDbContext<DometrainDbContext>("dometrain",
-    configureSettings: settings =>
+    settings =>
     {
         // Disable SSL for local development - Aspire PostgreSQL container doesn't have SSL configured
         if (!string.IsNullOrEmpty(settings.ConnectionString) &&
             !settings.ConnectionString.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase))
-        {
             settings.ConnectionString += ";SSL Mode=Disable";
-        }
     });
 builder.Services.AddDbContextFactory<DometrainDbContext>(lifetime: ServiceLifetime.Singleton);
 builder.AddRedisClient("redis");

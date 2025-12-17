@@ -1,6 +1,10 @@
-using Dometrain.Monolith.Api.ShoppingCarts;
+#region
+
+using Dometrain.Monolith.Api.ShoppingCarts.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+#endregion
 
 namespace Dometrain.Monolith.Api.Database.Configurations;
 

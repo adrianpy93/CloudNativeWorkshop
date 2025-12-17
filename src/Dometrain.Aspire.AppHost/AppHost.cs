@@ -1,7 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddPostgres("main-db", port: 5433);
-    //.WithLifetime(ContainerLifetime.Persistent)
+//.WithLifetime(ContainerLifetime.Persistent)
 
 // Add init script to create database
 postgres.WithBindMount("./postgres-init", "/docker-entrypoint-initdb.d");
