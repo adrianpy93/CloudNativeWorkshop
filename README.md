@@ -8,7 +8,7 @@ This project showcases a complete e-learning platform built with cloud-native pr
 
 - **Modular Monolith Architecture** - Domain-driven design with clear bounded contexts
 - **.NET Aspire Orchestration** - Streamlined local development with automatic infrastructure provisioning
-- **Polyglot Persistence** - PostgreSQL for relational data, Cosmos DB for shopping carts
+- **PostgreSQL + Entity Framework Core** - Primary relational database with code-first migrations
 - **Distributed Caching** - Redis for performance optimization
 - **Message-Driven Communication** - RabbitMQ for event-driven patterns
 - **Cloud-Ready Design** - Built for containerization and cloud deployment
@@ -21,12 +21,15 @@ This project showcases a complete e-learning platform built with cloud-native pr
 ├── Dometrain.Aspire.AppHost       # Aspire orchestration host
 ├── Dometrain.Aspire.ServiceDefaults # Shared service configuration
 └── Dometrain.Monolith.Api         # Main API (Modular Monolith)
-    ├── Courses/                    # Course catalog domain
+    ├── Identity/                   # Authentication & authorization
     ├── Students/                   # Student management domain
+    ├── Courses/                    # Course catalog domain
+    ├── ShoppingCarts/              # Shopping cart domain
     ├── Orders/                     # Order processing domain
-    ├── ShoppingCarts/              # Shopping cart domain (Cosmos DB)
     ├── Enrollments/                # Course enrollment domain
-    └── Identity/                   # Authentication & authorization
+    ├── Database/                   # EF Core DbContext, configurations, migrations
+    ├── ErrorHandling/              # Centralized exception handling
+    └── OpenApi/                    # Swagger configuration
 ```
 
 ### Technology Stack
@@ -34,11 +37,10 @@ This project showcases a complete e-learning platform built with cloud-native pr
 - **.NET 10** - Latest .NET runtime and SDK
 - **.NET Aspire 13** - Cloud-native orchestration and tooling
 - **ASP.NET Core Minimal APIs** - Lightweight endpoint definitions
-- **PostgreSQL 17** - Primary relational database
-- **Azure Cosmos DB** - NoSQL document store for shopping carts
+- **PostgreSQL 17** - Primary relational database (all domains)
+- **Entity Framework Core** - ORM with code-first migrations
 - **Redis** - Distributed caching layer
 - **RabbitMQ** - Message broker for async communication
-- **Dapper** - Micro-ORM for data access
 - **FluentValidation** - Request validation framework
 - **OpenTelemetry** - Observability (metrics, traces, logs)
 - **Swashbuckle** - OpenAPI/Swagger documentation
@@ -49,8 +51,7 @@ All infrastructure is automatically managed by Aspire:
 
 | Component | Purpose | Port | UI |
 |-----------|---------|------|-----|
-| PostgreSQL | Transactional data | 5433 | - |
-| Cosmos DB Emulator | Shopping carts | - | Data Explorer UI |
+| PostgreSQL | All transactional data | 5433 | - |
 | Redis | Caching | - | RedisInsight UI |
 | RabbitMQ | Message broker | - | Management Plugin UI |
 
@@ -85,10 +86,10 @@ dotnet run --project src/Dometrain.Aspire.AppHost
 
 This will:
 - Start PostgreSQL container and create the `dometrain` database
-- Launch Cosmos DB emulator with Data Explorer
 - Start Redis with RedisInsight
 - Launch RabbitMQ with Management Plugin
 - Start the main API
+- Apply EF Core migrations automatically
 - Open the Aspire Dashboard
 
 ### 4. Access the Application
@@ -110,18 +111,43 @@ On the first run, the application will:
 
 ### Domain Organization
 
-Each domain follows a consistent structure:
+Each domain module follows a consistent subfolder structure:
 
 ```
-Domain/
-├── {Domain}.cs                    # Domain models
-├── {Domain}Repository.cs          # Data access layer
-├── Cached{Domain}Repository.cs    # Caching decorator
-├── {Domain}Service.cs             # Business logic
-├── {Domain}Endpoints.cs           # API endpoint handlers
-├── {Domain}EndpointExtensions.cs  # Route registration
-├── {Domain}Requests.cs            # Request DTOs
-└── {Domain}Validator.cs           # FluentValidation rules
+{Domain}/
+├── Models/
+│   └── {Domain}.cs                    # Domain entity models
+├── Interfaces/
+│   ├── I{Domain}Repository.cs         # Repository interface
+│   └── I{Domain}Service.cs            # Service interface
+├── Services/
+│   └── {Domain}Service.cs             # Business logic implementation
+├── Repositories/
+│   ├── {Domain}Repository.cs          # EF Core data access
+│   └── Cached{Domain}Repository.cs    # Optional caching decorator
+├── Api/
+│   ├── {Domain}Endpoints.cs           # API endpoint handlers
+│   └── {Domain}EndpointExtensions.cs  # Route registration
+├── Mappers/
+│   └── {Domain}Mapper.cs              # DTO-to-entity mapping
+├── Validators/
+│   └── {Domain}Validator.cs           # FluentValidation rules
+├── Requests/
+│   └── {Domain}Requests.cs            # Request DTOs
+└── {MiscFiles}.cs                     # Config, extensions at root
+```
+
+Folders are only created when needed. Example - **Students** module:
+```
+Students/
+├── Models/Student.cs
+├── Interfaces/IStudentRepository.cs, IStudentService.cs
+├── Services/StudentService.cs
+├── Repositories/StudentRepository.cs
+├── Api/StudentEndpoints.cs, StudentEndpointExtensions.cs
+├── Mappers/StudentMapper.cs
+├── Validators/StudentValidator.cs
+└── Requests/StudentRequests.cs
 ```
 
 ### Key Patterns
@@ -183,19 +209,31 @@ docker compose up db
 
 ### Database Migrations
 
-The application uses code-first migrations via `DbInitializer`:
+The application uses Entity Framework Core code-first migrations:
 
-- Schema creation happens automatically on startup
-- Tables are created with `CREATE TABLE IF NOT EXISTS`
-- No manual migration steps required
+```bash
+# Create a new migration
+cd src/Dometrain.Monolith.Api
+dotnet ef migrations add MigrationName --output-dir Database/Migrations
+
+# Apply migrations manually (also runs on startup)
+dotnet ef database update
+```
+
+- Migrations are applied automatically on startup via `context.Database.MigrateAsync()`
+- EF Core configurations are in `Database/Configurations/`
+- No manual migration steps required for development
 
 ### Adding a New Domain
 
-1. Create domain folder under `Dometrain.Monolith.Api/`
-2. Add models, repository, service, endpoints
-3. Register endpoints in `Program.cs`
-4. Add validation rules
-5. Update database initialization if needed
+1. Create domain folder under `Dometrain.Monolith.Api/` with subfolders
+2. Add `Models/`, `Interfaces/`, `Services/`, `Repositories/`, `Api/` subfolders
+3. Implement entity models, repository, service, and endpoints
+4. Add EF Core configuration in `Database/Configurations/`
+5. Register DbSet in `Database/DometrainDbContext.cs`
+6. Register services and endpoints in `Program.cs`
+7. Add validation rules in `Validators/`
+8. Create EF Core migration for schema changes
 
 ## Configuration
 
@@ -329,9 +367,9 @@ kubectl apply -k src/Dometrain.Aspire.AppHost/aspirate-output/
 - **Event-Driven Architecture** - RabbitMQ messaging
 
 ### Data Patterns
-- **Polyglot Persistence** - Different databases for different needs
+- **Repository Pattern** - EF Core data access with IDbContextFactory
 - **CQRS-lite** - Read/write separation in repositories
-- **Optimistic Concurrency** - Version-based conflict detection
+- **Decorator Pattern** - Caching repositories wrap base repositories
 
 ## Performance Considerations
 
@@ -349,8 +387,8 @@ Cached entities:
 ### Database Optimization
 
 - **Connection pooling** - Managed by Npgsql
-- **Prepared statements** - Via Dapper
-- **Indexed lookups** - On email, slug fields
+- **IDbContextFactory** - Singleton repositories with short-lived DbContext per operation
+- **Indexed lookups** - On email, slug fields via EF Core configurations
 
 ## Security
 
@@ -379,7 +417,7 @@ This project is for educational purposes as part of the NDC Copenhagen 2025 Clou
 - [.NET Aspire Documentation](https://learn.microsoft.com/en-us/dotnet/aspire/)
 - [Minimal APIs Guide](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis)
 - [Cloud-Native Patterns](https://www.microsoft.com/en-us/architecture/cloud-native)
-- [Dapper Documentation](https://github.com/DapperLib/Dapper)
+- [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
 
 ---
 
