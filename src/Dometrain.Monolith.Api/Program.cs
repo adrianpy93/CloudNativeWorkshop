@@ -142,29 +142,15 @@ app.MapShoppingCartEndpoints();
 app.MapEnrollmentEndpoints();
 app.MapOrderEndpoints();
 
-// Apply EF Core migrations and seed admin user on startup
+// Apply EF Core migrations and seed data on startup
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<DometrainDbContext>();
-    await context.Database.MigrateAsync();
-
-    // Seed admin user if not exists
-    var adminId = Guid.Parse("005d25b1-bfc8-4391-b349-6cec00d1416c");
-    var adminEmail = "admin@dometrain.com";
-
-    if (!await context.Students.AnyAsync(s => s.Id == adminId))
+    await using (var context = scope.ServiceProvider.GetRequiredService<DometrainDbContext>())
     {
+        await context.Database.MigrateAsync();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<Student>>();
-        var adminUser = new Student
-        {
-            Id = adminId,
-            Email = adminEmail,
-            FullName = "Admin"
-        };
-        adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "admin");
-        context.Students.Add(adminUser);
-        await context.SaveChangesAsync();
+        await DatabaseSeeder.SeedAsync(context, passwordHasher);
     }
 }
 
-app.Run();
+await app.RunAsync();

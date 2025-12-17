@@ -18,7 +18,9 @@ var rabbitmq = builder.AddRabbitMQ("rabbitmq")
 builder.AddProject("dometrain-api", "../Dometrain.Monolith.Api/Dometrain.Monolith.Api.csproj")
     //.WithReplicas(5)
     .WithReference(mainDb)
+    .WaitFor(mainDb)
     .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(rabbitmq);
 
 var app = builder.Build();
