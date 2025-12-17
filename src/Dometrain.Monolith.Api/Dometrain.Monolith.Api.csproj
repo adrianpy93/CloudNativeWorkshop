@@ -26,6 +26,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="Database\seed-data.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Dometrain.Aspire.ServiceDefaults\Dometrain.Aspire.ServiceDefaults.csproj"/>
     </ItemGroup>
 

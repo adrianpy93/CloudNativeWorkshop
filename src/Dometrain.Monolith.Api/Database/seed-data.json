@@ -1,0 +1,116 @@
+{
+  "students": [
+    {
+      "id": "005d25b1-bfc8-4391-b349-6cec00d1416c",
+      "email": "admin@dometrain.com",
+      "fullName": "Admin",
+      "password": "admin"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "email": "john.doe@example.com",
+      "fullName": "John Doe",
+      "password": "password123"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "email": "jane.smith@example.com",
+      "fullName": "Jane Smith",
+      "password": "password123"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "email": "bob.wilson@example.com",
+      "fullName": "Bob Wilson",
+      "password": "password123"
+    }
+  ],
+  "courses": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "Getting Started with .NET Aspire",
+      "description": "Learn how to build cloud-native applications with .NET Aspire orchestration, service defaults, and local development experience.",
+      "author": "Nick Chapsas",
+      "slug": "getting-started-with-dotnet-aspire"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "name": "Deep Dive into Entity Framework Core",
+      "description": "Master Entity Framework Core from basics to advanced topics including performance optimization, migrations, and complex queries.",
+      "author": "Julie Lerman",
+      "slug": "deep-dive-into-entity-framework-core"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "name": "Mastering Minimal APIs",
+      "description": "Build high-performance APIs with ASP.NET Core Minimal APIs, learn endpoint routing, filters, and best practices.",
+      "author": "Nick Chapsas",
+      "slug": "mastering-minimal-apis"
+    },
+    {
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "name": "Redis Caching Strategies",
+      "description": "Implement effective caching strategies with Redis, including distributed caching, cache invalidation, and performance patterns.",
+      "author": "Steve Gordon",
+      "slug": "redis-caching-strategies"
+    },
+    {
+      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "name": "RabbitMQ and MassTransit Fundamentals",
+      "description": "Learn message-driven architecture with RabbitMQ and MassTransit, including pub/sub, sagas, and fault tolerance.",
+      "author": "Chris Patterson",
+      "slug": "rabbitmq-and-masstransit-fundamentals"
+    }
+  ],
+  "orders": [
+    {
+      "id": "11110000-0000-0000-0000-000000000001",
+      "studentId": "11111111-1111-1111-1111-111111111111",
+      "createdDaysAgo": 30,
+      "courseIds": [
+        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+      ]
+    },
+    {
+      "id": "22220000-0000-0000-0000-000000000002",
+      "studentId": "22222222-2222-2222-2222-222222222222",
+      "createdDaysAgo": 15,
+      "courseIds": [
+        "cccccccc-cccc-cccc-cccc-cccccccccccc",
+        "dddddddd-dddd-dddd-dddd-dddddddddddd",
+        "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+      ]
+    }
+  ],
+  "enrollments": [
+    {
+      "studentId": "11111111-1111-1111-1111-111111111111",
+      "courseId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    },
+    {
+      "studentId": "11111111-1111-1111-1111-111111111111",
+      "courseId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+    },
+    {
+      "studentId": "22222222-2222-2222-2222-222222222222",
+      "courseId": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    },
+    {
+      "studentId": "22222222-2222-2222-2222-222222222222",
+      "courseId": "dddddddd-dddd-dddd-dddd-dddddddddddd"
+    },
+    {
+      "studentId": "22222222-2222-2222-2222-222222222222",
+      "courseId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+    },
+    {
+      "studentId": "33333333-3333-3333-3333-333333333333",
+      "courseId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    },
+    {
+      "studentId": "33333333-3333-3333-3333-333333333333",
+      "courseId": "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    }
+  ]
+}

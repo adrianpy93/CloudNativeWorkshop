@@ -263,3 +263,4 @@ __pycache__/
 
 !cert.pfx
 .DS_Store
+CLAUDE.md

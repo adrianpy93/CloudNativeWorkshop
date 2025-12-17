@@ -149,7 +149,8 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.MigrateAsync();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<Student>>();
-        await DatabaseSeeder.SeedAsync(context, passwordHasher);
+        var seedFilePath = Path.Combine(AppContext.BaseDirectory, "Database", "seed-data.json");
+        await DatabaseSeeder.SeedAsync(context, passwordHasher, seedFilePath);
     }
 }
 
